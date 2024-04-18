@@ -19,16 +19,31 @@ tokenizer = AutoTokenizer.from_pretrained("google-bert/bert-base-cased")
 
 
 # Tokenize function
+
 def tokenize_function(examples):
-    return tokenizer(examples["text"].tolist(), padding="max_length", truncation=True)
+    tokenized_inputs = tokenizer(examples["text"].tolist(), padding="max_length", truncation=True, return_tensors="pt")
+    print("Tokenized Inputs:", tokenized_inputs)
+    return tokenized_inputs
 
 # Tokenize datasets
 train_dataset = tokenize_function(train_df) 
 eval_dataset = tokenize_function(eval_df) 
 
-print("train_dataset", train_dataset)
+# Print the first few samples of train_dataset
+print("Train Dataset Sample:")
+for i in range(min(5, len(train_dataset))):
+    print(train_dataset[i])
+
+# Print the first few samples of eval_dataset
+print("\nEval Dataset Sample:")
+for i in range(min(5, len(eval_dataset))):
+    print(eval_dataset[i])
+    
 # Load model
 model = AutoModelForSequenceClassification.from_pretrained("google-bert/bert-base-cased", num_labels=len(dataset["train"].features["label"].names))
+
+print("Model Identifier:", model.__class__.__name__)
+print("Number of Parameters:", sum(p.numel() for p in model.parameters()))
 
 # Define compute_metrics function
 def compute_metrics(eval_pred):
@@ -44,7 +59,9 @@ training_args = TrainingArguments(
     per_device_eval_batch_size=8,
     num_train_epochs=3,  # Number of epochs
     logging_dir="logs",
+    logging_strategy="epoch",  # Log after each epoch
 )
+
 
 # Trainer
 trainer = Trainer(
